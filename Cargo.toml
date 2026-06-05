@@ -1,0 +1,31 @@
+[package]
+name = "rustand"
+version = "0.1.0"
+edition = "2024"
+description = "A lightweight, Zustand-inspired state management library for Rust."
+license = "MIT"
+keywords = ["state", "management", "zustand", "store", "reactive"]
+categories = ["concurrency", "rust-patterns", "wasm"]
+repository = "https://github.com/user/rustand"
+readme = "README.md"
+documentation = "https://docs.rs/rustand"
+homepage = "https://github.com/user/rustand"
+
+[dependencies]
+tokio = { version = "1", features = ["sync"], optional = true }
+async-std = { version = "1", optional = true }
+futures-lite = { version = "2", optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+async-std = { version = "1", features = ["attributes"] }
+futures-lite = "2"
+tokio-test = "0.4"
+
+[features]
+default = ["multi-threaded"]
+multi-threaded = []
+single-threaded = []
+wasm = ["single-threaded"]
+tokio = ["dep:tokio", "dep:futures-lite"]
+async-std = ["dep:async-std"]

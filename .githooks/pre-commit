@@ -1,0 +1,9 @@
+#!/bin/sh
+
+STAGED_RS_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.rs$')
+
+if [ -n "$STAGED_RS_FILES" ]; then
+    echo "Start auto-formatting..."
+    rustfmt $STAGED_RS_FILES
+    git add $STAGED_RS_FILES
+fi

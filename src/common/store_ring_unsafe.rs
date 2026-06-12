@@ -1,5 +1,6 @@
 #[allow(unsafe_code)]
 mod unsafe_ring_impl {
+    #[allow(clippy::wildcard_imports)]
     use super::*;
     use std::cell::UnsafeCell;
     use std::sync::{
@@ -38,8 +39,10 @@ mod unsafe_ring_impl {
         T: Send + Sync + 'static,
     {
         pub fn unsubscribe(&self, subscriber_id: SubscriberId) -> Result<(), StoreError> {
-            let mut subs = self.subscribers.write().map_err(|_| StoreError::Poisoned)?;
-            subs.retain(|(sub_id, _)| *sub_id != subscriber_id);
+            self.subscribers
+                .write()
+                .map_err(|_| StoreError::Poisoned)?
+                .retain(|(sub_id, _)| *sub_id != subscriber_id);
             Ok(())
         }
     }
@@ -111,7 +114,8 @@ mod unsafe_ring_impl {
             Ok(val)
         }
 
-        pub async fn get_async(&self) -> Result<T, StoreError>
+    #[allow(clippy::future_not_send, clippy::unused_async)]
+    pub async fn get_async(&self) -> Result<T, StoreError>
         where
             T: Clone,
         {
@@ -164,7 +168,8 @@ mod unsafe_ring_impl {
             Ok(())
         }
 
-        pub async fn set_async<F>(&self, update: F) -> Result<(), StoreError>
+    #[allow(clippy::future_not_send, clippy::unused_async)]
+    pub async fn set_async<F>(&self, update: F) -> Result<(), StoreError>
         where
             F: FnOnce(&mut T) + Send + 'static,
             T: Clone,
@@ -190,7 +195,8 @@ mod unsafe_ring_impl {
             })
         }
 
-        pub async fn subscribe_async<F>(&self, callback: F) -> Result<Subscription<T, R>, StoreError>
+    #[allow(clippy::unused_async)]
+    pub async fn subscribe_async<F>(&self, callback: F) -> Result<Subscription<T, R>, StoreError>
         where
             F: Fn(&T) + Send + Sync + 'static,
         {

@@ -65,7 +65,12 @@ fn run_write_heavy() {
         let _ = black_box(store.get());
     }
     let elapsed = start.elapsed();
-    print_results("4. Write-Heavy (7W:1R)", ITERATIONS, ITERATIONS * 7, elapsed);
+    print_results(
+        "4. Write-Heavy (7W:1R)",
+        ITERATIONS,
+        ITERATIONS * 7,
+        elapsed,
+    );
 }
 
 fn run_write_only() {
@@ -99,8 +104,14 @@ fn run_latency_test(name: &str, num_subs: usize) {
 
     println!("{}:", name);
     println!("  Total Time:   {:?}", elapsed);
-    println!("  Writes/sec:   {:.2}", iters as f64 / elapsed.as_secs_f64());
-    println!("  Avg Latency:  {:.2} ns", total_latency.as_nanos() as f64 / iters as f64);
+    println!(
+        "  Writes/sec:   {:.2}",
+        iters as f64 / elapsed.as_secs_f64()
+    );
+    println!(
+        "  Avg Latency:  {:.2} ns",
+        total_latency.as_nanos() as f64 / iters as f64
+    );
 }
 
 fn print_results(name: &str, reads: u64, writes: u64, elapsed: Duration) {

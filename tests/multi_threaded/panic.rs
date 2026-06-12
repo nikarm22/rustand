@@ -1,9 +1,17 @@
 use rustand::Store;
-#[cfg(any(feature = "mt-no-reentry", feature = "mt-ring", feature = "mt-ring-unsafe"))]
+#[cfg(any(
+    feature = "mt-no-reentry",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe"
+))]
 use std::sync::{Arc, Mutex};
 
 #[tokio::test]
-#[cfg(any(feature = "mt-no-reentry", feature = "mt-ring", feature = "mt-ring-unsafe"))]
+#[cfg(any(
+    feature = "mt-no-reentry",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe"
+))]
 async fn test_panic_safety_multi_threaded() {
     let store = Store::new(0);
     let called = Arc::new(Mutex::new(false));

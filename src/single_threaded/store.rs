@@ -53,6 +53,11 @@ where
     }
 
     /// Asynchronous version of [`Store::get`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError::Poisoned`] if the state is currently being updated.
+    #[allow(clippy::future_not_send, clippy::unused_async)]
     pub async fn get_async(&self) -> Result<T, StoreError>
     where
         T: Clone,
@@ -116,6 +121,11 @@ where
     }
 
     /// Asynchronous version of [`Store::set`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError::Poisoned`] if the state is currently being accessed.
+    #[allow(clippy::future_not_send, clippy::unused_async)]
     pub async fn set_async<F>(&self, update: F) -> Result<(), StoreError>
     where
         F: FnOnce(&mut T),
@@ -138,7 +148,10 @@ where
 
         #[cfg(feature = "st-no-reentry")]
         {
-            self.inner.subscribers.borrow_mut().push((id, Arc::new(callback)));
+            self.inner
+                .subscribers
+                .borrow_mut()
+                .push((id, Arc::new(callback)));
         }
         #[cfg(not(feature = "st-no-reentry"))]
         {
@@ -156,6 +169,11 @@ where
     }
 
     /// Asynchronous version of [`Store::subscribe`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError::Poisoned`] if the subscriber list is currently being accessed.
+    #[allow(clippy::future_not_send, clippy::unused_async)]
     pub async fn subscribe_async<F>(&self, callback: F) -> Result<Subscription<T>, StoreError>
     where
         F: Fn(&T) + 'static,

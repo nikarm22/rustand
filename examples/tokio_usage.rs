@@ -21,18 +21,14 @@ async fn main() {
         let store = store.clone();
         async move {
             tokio::time::sleep(Duration::from_millis(100)).await;
-            store
-                .set(|s| s.push("From Task 1".to_string()))
-                .unwrap();
+            store.set(|s| s.push("From Task 1".to_string())).unwrap();
         }
     });
 
     // Perform a synchronous update using the sync API
     // This is useful if you are calling from a non-async context
     // or just want to fire-and-forget.
-    store
-        .set(|s| s.push("From Sync Call".to_string()))
-        .unwrap();
+    store.set(|s| s.push("From Sync Call".to_string())).unwrap();
 
     // Wait a bit to let the async task finish
     tokio::time::sleep(Duration::from_millis(200)).await;

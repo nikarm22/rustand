@@ -35,7 +35,11 @@ async fn test_subscription_clone_behavior() {
 }
 
 #[tokio::test]
-#[cfg(not(any(feature = "mt-no-reentry", feature = "mt-ring", feature = "mt-ring-unsafe")))]
+#[cfg(not(any(
+    feature = "mt-no-reentry",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe"
+)))]
 async fn test_drop_subscription_in_callback() {
     let store = Store::new(0);
     let called_count = Arc::new(Mutex::new(0));

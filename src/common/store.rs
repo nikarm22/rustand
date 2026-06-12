@@ -3,10 +3,10 @@ use crate::common::subscription::Subscription;
 use crate::error::StoreError;
 use std::sync::Arc;
 
-#[cfg(not(feature = "mt-ring-unsafe"))]
-use crate::common::types::{StoreEvent, SubscriberId};
 #[cfg(feature = "mt-ring-unsafe")]
 use crate::common::types::SubscriberId;
+#[cfg(not(feature = "mt-ring-unsafe"))]
+use crate::common::types::{StoreEvent, SubscriberId};
 
 pub type SubscriberCallback<T> = Arc<dyn for<'a> Fn(&'a T) + Send + Sync + 'static>;
 
@@ -15,6 +15,7 @@ include!("store_ring_unsafe.rs");
 
 #[cfg(not(feature = "mt-ring-unsafe"))]
 mod standard_impl {
+    #[allow(clippy::wildcard_imports)]
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -173,7 +174,10 @@ mod standard_impl {
                     return Err(StoreError::Poisoned);
                 }
                 let idx = self.inner.current_idx.load(Ordering::Acquire);
-                let guard = self.inner.slots[idx].0.read().map_err(|_| StoreError::Poisoned)?;
+                let guard = self.inner.slots[idx]
+                    .0
+                    .read()
+                    .map_err(|_| StoreError::Poisoned)?;
                 Ok(guard.clone())
             }
             #[cfg(not(feature = "mt-ring"))]
@@ -204,25 +208,39 @@ mod standard_impl {
             #[cfg(feature = "mt-ring")]
             {
                 let state_snapshot = {
-                    let _writer_guard = self.inner.writer_lock.lock().map_err(|_| StoreError::Poisoned)?;
+                    let _writer_guard = self
+                        .inner
+                        .writer_lock
+                        .lock()
+                        .map_err(|_| StoreError::Poisoned)?;
                     let current = self.inner.current_idx.load(Ordering::Relaxed);
                     let next = (current + 1) % 4;
 
-                    let mut next_guard = self.inner.slots[next].0.write().map_err(|_| StoreError::Poisoned)?;
-                    
+                    let mut next_guard = self.inner.slots[next]
+                        .0
+                        .write()
+                        .map_err(|_| StoreError::Poisoned)?;
+
                     {
-                        let current_guard = self.inner.slots[current].0.read().map_err(|_| StoreError::Poisoned)?;
+                        let current_guard = self.inner.slots[current]
+                            .0
+                            .read()
+                            .map_err(|_| StoreError::Poisoned)?;
                         *next_guard = current_guard.clone();
                     }
-                    
+
                     update(&mut next_guard);
-                    
+
                     self.inner.current_idx.store(next, Ordering::Release);
                     Arc::new(next_guard.clone())
                 };
 
                 {
-                    let subs = self.inner.subscribers.read().map_err(|_| StoreError::Poisoned)?;
+                    let subs = self
+                        .inner
+                        .subscribers
+                        .read()
+                        .map_err(|_| StoreError::Poisoned)?;
                     for (_, cb) in &*subs {
                         cb(&state_snapshot);
                     }
@@ -293,7 +311,11 @@ mod standard_impl {
 
             #[cfg(feature = "mt-ring")]
             {
-                let mut subs = self.inner.subscribers.write().map_err(|_| StoreError::Poisoned)?;
+                let mut subs = self
+                    .inner
+                    .subscribers
+                    .write()
+                    .map_err(|_| StoreError::Poisoned)?;
                 subs.push((id, cb));
             }
             #[cfg(not(feature = "mt-ring"))]
@@ -316,7 +338,11 @@ mod standard_impl {
             })
         }
 
-        pub async fn subscribe_async<F>(&self, callback: F) -> Result<Subscription<T, R>, StoreError>
+        #[allow(clippy::unused_async)]
+        pub async fn subscribe_async<F>(
+            &self,
+            callback: F,
+        ) -> Result<Subscription<T, R>, StoreError>
         where
             F: Fn(&T) + Send + Sync + 'static,
         {

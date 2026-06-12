@@ -1,14 +1,106 @@
+#[cfg(any(
+    feature = "multi-threaded",
+    feature = "tokio",
+    feature = "async-std",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe",
+    feature = "mt-no-reentry"
+))]
 use rustand::Store;
+#[cfg(any(
+    feature = "multi-threaded",
+    feature = "tokio",
+    feature = "async-std",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe",
+    feature = "mt-no-reentry"
+))]
 use std::hint::black_box;
+#[cfg(any(
+    feature = "multi-threaded",
+    feature = "tokio",
+    feature = "async-std",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe",
+    feature = "mt-no-reentry"
+))]
 use std::sync::Arc;
+#[cfg(any(
+    feature = "multi-threaded",
+    feature = "tokio",
+    feature = "async-std",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe",
+    feature = "mt-no-reentry"
+))]
 use std::sync::Barrier;
+#[cfg(any(
+    feature = "multi-threaded",
+    feature = "tokio",
+    feature = "async-std",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe",
+    feature = "mt-no-reentry"
+))]
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+#[cfg(any(
+    feature = "multi-threaded",
+    feature = "tokio",
+    feature = "async-std",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe",
+    feature = "mt-no-reentry"
+))]
 use std::thread;
+#[cfg(any(
+    feature = "multi-threaded",
+    feature = "tokio",
+    feature = "async-std",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe",
+    feature = "mt-no-reentry"
+))]
 use std::time::{Duration, Instant};
 
+#[cfg(any(
+    feature = "multi-threaded",
+    feature = "tokio",
+    feature = "async-std",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe",
+    feature = "mt-no-reentry"
+))]
 const TEST_DURATION: Duration = Duration::from_secs(5);
+#[cfg(any(
+    feature = "multi-threaded",
+    feature = "tokio",
+    feature = "async-std",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe",
+    feature = "mt-no-reentry"
+))]
 const NUM_CORES: usize = 6;
 
+#[cfg(not(any(
+    feature = "multi-threaded",
+    feature = "tokio",
+    feature = "async-std",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe",
+    feature = "mt-no-reentry"
+)))]
+fn main() {
+    println!("mt-bench requires a multi-threaded feature to be enabled.");
+}
+
+#[cfg(any(
+    feature = "multi-threaded",
+    feature = "tokio",
+    feature = "async-std",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe",
+    feature = "mt-no-reentry"
+))]
 fn main() {
     println!("Starting Multithreaded Benchmarks...");
     println!("System Cores: {}", NUM_CORES);
@@ -37,6 +129,14 @@ fn main() {
     run_perf_test("5. Write-Only (8W, 0R)", 8, 0);
 }
 
+#[cfg(any(
+    feature = "multi-threaded",
+    feature = "tokio",
+    feature = "async-std",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe",
+    feature = "mt-no-reentry"
+))]
 fn run_perf_test(name: &str, num_writers: usize, num_readers: usize) {
     let store = Store::new(0);
     let running = Arc::new(AtomicBool::new(true));
@@ -92,6 +192,14 @@ fn run_perf_test(name: &str, num_writers: usize, num_readers: usize) {
     println!("  Writes/sec: {:.2}", writes as f64 / elapsed);
 }
 
+#[cfg(any(
+    feature = "multi-threaded",
+    feature = "tokio",
+    feature = "async-std",
+    feature = "mt-ring",
+    feature = "mt-ring-unsafe",
+    feature = "mt-no-reentry"
+))]
 fn run_latency_test(name: &str, num_writers: usize, num_subs: usize) {
     let store = Store::new(0);
     let running = Arc::new(AtomicBool::new(true));

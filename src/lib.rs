@@ -26,16 +26,29 @@
 //! # tokio_test::block_on(async {
 //! let store = Store::new(0);
 //!
+<<<<<<< Updated upstream
 //! // Subscribe to changes
+=======
+>>>>>>> Stashed changes
 //! let _sub = store.subscribe(|v| println!("New value: {}", v)).await.unwrap();
 //!
 //! // Update state
 //! store.set(|s| *s += 1).await.unwrap();
+<<<<<<< Updated upstream
 //!
 //! // Get state
 //! assert_eq!(store.get().await.unwrap(), 1);
+=======
+>>>>>>> Stashed changes
 //! # });
 //! ```
+//!
+//! ## Ecosystem Integrations (Planned)
+//! - `rustand-slint`
+//! - `rustand-tauri`
+//! - `rustand-leptos`
+//! - `rustand-egui`
+//! - `rustand-redox`
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]

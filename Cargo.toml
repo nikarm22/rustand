@@ -6,10 +6,10 @@ description = "A lightweight, Zustand-inspired state management library for Rust
 license = "MIT"
 keywords = ["state", "management", "zustand", "store", "reactive"]
 categories = ["concurrency", "rust-patterns", "wasm"]
-repository = "https://github.com/user/rustand"
+repository = "https://github.com/nikarm22/rustand"
 readme = "README.md"
 documentation = "https://docs.rs/rustand"
-homepage = "https://github.com/user/rustand"
+homepage = "https://github.com/nikarm22/rustand"
 
 [dependencies]
 tokio = { version = "1", features = ["sync"], optional = true }

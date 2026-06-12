@@ -1,97 +1,97 @@
 # rustand
 
-A lightweight, Zustand-inspired state management library for Rust.
+[![Crates.io](https://img.shields.io/crates/v/rustand.svg)](https://crates.io/crates/rustand)
+[![Documentation](https://docs.rs/rustand/badge.svg)](https://docs.rs/rustand)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/nikarm22/rustand/actions/workflows/ci.yml/badge.svg)](https://github.com/nikarm22/rustand/actions)
 
-`rustand` provides a simple, thread-safe way to manage shared state with subscription support. It is designed to be lean, dependency-free, and easy to use across various concurrency models and async runtimes.
+**The minimalist, deadlock-free state manager for Rust.**
 
-## Key Features
+`rustand` is a lightweight state management library inspired by [Zustand](https://github.com/pmndrs/zustand). It provides a simple `get`/`set`/`subscribe` pattern designed for high-performance concurrent applications, UI frameworks, and WASM environments.
 
-- **Simple API:** Minimalist `get`, `set`, and `subscribe` pattern.
-- **Concurrency Safe:** releases locks before notifying subscribers, preventing recursive deadlocks.
-- **Pluggable Runtimes:** First-class support for Standard Threads, Tokio, and async-std.
-- **WASM Friendly:** Dedicated `single-threaded` mode for browser and UI environments.
-- **Zero Dependencies:** Keeps your project's dependency graph small.
+## 🚀 Key Features
 
-## Installation
+- **🎯 Simple API:** Minimalist `get`, `set`, and `subscribe` pattern.
+- **🛡️ Stability & Performance:** Deadlock-free by design. Releases locks before notifying subscribers to ensure minimal lock contention and predictable performance.
+- **🏗️ Runtime Agnostic:** Core logic is runtime-independent, with first-class support for **Tokio** and **async-std**.
+- **🦀 Zero Dependencies:** The core remains dependency-free. Runtime-specific features only bring in the necessary dependencies.
+- **🌐 WASM Ready:** Specialized `single-threaded` mode eliminates `Arc` and atomic lock overhead for maximum UI performance.
+- **🔒 Strictly No-Unsafe:** Verified safe Rust.
+
+---
+
+## 📦 Installation
 
 Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rustand = "0.1.0"
+rustand = "0.1"
 ```
 
-### Feature Flags
+### Feature Matrix
 
-- `multi-threaded` (default): Uses `std::sync` primitives.
-- `single-threaded`: Uses `Rc` and `RefCell` (no atomic overhead).
-- `wasm`: Alias for `single-threaded`, optimized for WebAssembly.
-- `tokio`: Integrates with the Tokio async runtime.
-- `async-std`: Integrates with the async-std runtime.
+| Feature | Description | Primitives | Concurrency | Runtime |
+| :--- | :--- | :--- | :--- | :--- |
+| `multi-threaded` | (Default) Thread-safe store. | `Arc` + `RwLock` | `Send + Sync` | `std` |
+| `single-threaded`| High-performance UI/WASM mode. | `Rc` + `RefCell` | `!Send + !Sync` | None |
+| `tokio` | Tokio-specific sync primitives. | `Arc` + `Tokio RwLock` | `Send + Sync` | `tokio` |
+| `async-std` | async-std sync primitives. | `Arc` + `async-std RwLock`| `Send + Sync` | `async-std` |
 
-## Usage
+---
 
-### Basic Example (Multi-threaded)
+## 💡 Motivation
 
+This project was born out of frustration while developing a [Slint](https://slint.dev/) application. Coming from years of front-end development, I found the ergonomics of existing UI state management in Rust to be severely lacking. I believe that in this day and age, managing state should be intuitive and seamless, even in a systems language. `rustand` is my attempt to bring that front-end simplicity to the Rust ecosystem without compromising on safety or performance.
+
+---
+
+## 💻 Quick Start
+
+### Multi-threaded (Async)
 ```rust
 use rustand::Store;
-use std::sync::{Arc, Mutex};
 
 #[tokio::main]
 async fn main() {
-    // Create a new store
     let store = Store::new(0);
 
-    // Subscribe to changes
-    let _sub = store.subscribe(|v| {
-        println!("Count changed to: {}", v);
-    }).await.unwrap();
+    let _sub = store.subscribe(|v| println!("Value: {}", v)).await.unwrap();
 
-    // Update state from multiple tasks
-    let mut handles = vec![];
-    for _ in 0..10 {
-        let store = store.clone();
-        handles.push(tokio::spawn(async move {
-            store.set(|s| *s += 1).await.unwrap();
-        }));
-    }
-
-    for h in handles { h.await.unwrap(); }
-
-    assert_eq!(store.get().await.unwrap(), 10);
+    store.set(|s| *s += 1).await.unwrap();
 }
 ```
 
-### Single-threaded Example (WASM/UI)
-
+### UI/WASM (Sync)
 ```rust
-// Cargo.toml: rustand = { version = "0.1.0", default-features = false, features = ["single-threaded"] }
 use rustand::Store;
 
 fn main() {
-    let store = Store::new("Initial".to_string());
+    let store = Store::new("Hello".to_string());
 
-    store.subscribe_sync(|v| println!("State is now: {}", v)).unwrap();
-
-    // No need for Arc or Mutex in single-threaded mode
-    store.set_sync(|s| *s = "Updated".to_string()).unwrap();
+    store.subscribe_sync(|v| println!("State: {}", v)).unwrap();
+    store.set_sync(|s| *s = "World".to_string()).unwrap();
 }
 ```
 
-## More Examples
+---
 
-Check the `examples/` directory for more advanced patterns:
-- `custom_struct.rs`: Using a complex struct for state.
-- `global_store.rs`: Setting up a static global store using `OnceLock`.
-- `tokio_usage.rs`: Integration with the Tokio runtime and background tasks.
+## 🗺️ Ecosystem Roadmap
 
-## How it works
+- [ ] `rustand-slint`
+- [ ] `rustand-tauri` (with npm counterpart)
+- [ ] `rustand-leptos`
+- [ ] `rustand-egui`
+- [ ] `rustand-redox`
 
-`rustand` works by taking a **snapshot** of the state and the subscribers list before notification. This ensures that:
-1. Locks are held for the minimum time possible.
-2. Subscribers can safely call `store.set()` or `store.get()` without causing a deadlock.
-3. The state seen by a subscriber is consistent for the duration of the callback.
+---
 
-## License
+## 🤝 Contributing
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+Contributions and suggestions are welcomed! If you have ideas for new features or find any bugs, please open an [issue](https://github.com/nikarm22/rustand/issues).
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
+
+## ⚖️ License
+
+Licensed under the [MIT License](LICENSE).

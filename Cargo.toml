@@ -26,6 +26,15 @@ tokio-test = "0.4"
 default = ["multi-threaded"]
 multi-threaded = []
 single-threaded = []
+st-no-reentry = ["single-threaded"]
 wasm = ["single-threaded"]
 tokio = ["dep:tokio", "dep:futures-lite"]
 async-std = ["dep:async-std"]
+
+[[bench]]
+name = "mt-bench"
+harness = false
+
+[[bench]]
+name = "st-bench"
+harness = false

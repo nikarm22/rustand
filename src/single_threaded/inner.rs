@@ -21,8 +21,17 @@ where
     /// Unsubscribe a subscriber by ID.
     #[allow(clippy::unnecessary_wraps)]
     pub fn unsubscribe(&self, subscriber_id: SubscriberId) -> Result<(), StoreError> {
-        let mut subs = self.subscribers.borrow_mut();
-        subs.retain(|(sub_id, _)| *sub_id != subscriber_id);
-        Ok(())
+        #[cfg(feature = "st-no-reentry")]
+        {
+            let mut subs = self.subscribers.borrow_mut();
+            subs.retain(|(sub_id, _)| *sub_id != subscriber_id);
+            Ok(())
+        }
+        #[cfg(not(feature = "st-no-reentry"))]
+        {
+            let mut subs = self.subscribers.try_borrow_mut().map_err(|_| StoreError::Poisoned)?;
+            subs.retain(|(sub_id, _)| *sub_id != subscriber_id);
+            Ok(())
+        }
     }
 }

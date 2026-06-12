@@ -26,20 +26,14 @@
 //! # tokio_test::block_on(async {
 //! let store = Store::new(0);
 //!
-<<<<<<< Updated upstream
 //! // Subscribe to changes
-=======
->>>>>>> Stashed changes
 //! let _sub = store.subscribe(|v| println!("New value: {}", v)).await.unwrap();
 //!
 //! // Update state
 //! store.set(|s| *s += 1).await.unwrap();
-<<<<<<< Updated upstream
 //!
 //! // Get state
 //! assert_eq!(store.get().await.unwrap(), 1);
-=======
->>>>>>> Stashed changes
 //! # });
 //! ```
 //!
@@ -64,7 +58,7 @@
     all(feature = "tokio", feature = "async-std")
 ))]
 compile_error!(
-    "Features \"multi-threaded\", \"single-threaded\", \"tokio\", and \"async-std\" are mutually exclusive."
+    "Features \"multi-threaded\", \"single-threaded\", \"tokio\", and \"async-std\" are mutually exclusive. Note: \"st-no-reentry\" implies \"single-threaded\"."
 );
 
 // Ensure that at least one feature is enabled

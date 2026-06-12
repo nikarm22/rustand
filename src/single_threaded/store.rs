@@ -50,12 +50,19 @@ where
     where
         T: Clone,
     {
-        let state = self
-            .inner
-            .state
-            .try_borrow()
-            .map_err(|_| StoreError::Poisoned)?;
-        Ok(state.clone())
+        #[cfg(feature = "st-no-reentry")]
+        {
+            Ok(self.inner.state.borrow().clone())
+        }
+        #[cfg(not(feature = "st-no-reentry"))]
+        {
+            let state = self
+                .inner
+                .state
+                .try_borrow()
+                .map_err(|_| StoreError::Poisoned)?;
+            Ok(state.clone())
+        }
     }
 
     /// Update the state using a closure.
@@ -82,33 +89,49 @@ where
         F: FnOnce(&mut T),
         T: Clone,
     {
-        let (state_snapshot, subscribers_snapshot) = {
-            let mut state = self
-                .inner
-                .state
-                .try_borrow_mut()
-                .map_err(|_| StoreError::Poisoned)?;
-            update(&mut state);
-            let state_snapshot = state.clone();
-
-            let subscribers = self
-                .inner
-                .subscribers
-                .try_borrow()
-                .map_err(|_| StoreError::Poisoned)?;
-
-            let subscribers_snapshot: Vec<_> = subscribers
-                .iter()
-                .map(|(id, cb)| (*id, Arc::clone(cb)))
-                .collect();
-
-            (state_snapshot, subscribers_snapshot)
-        };
-
-        for (_, cb) in subscribers_snapshot {
-            cb(&state_snapshot);
+        #[cfg(feature = "st-no-reentry")]
+        {
+            {
+                let mut state = self.inner.state.borrow_mut();
+                update(&mut state);
+            }
+            let state = self.inner.state.borrow();
+            let subscribers = self.inner.subscribers.borrow();
+            for (_, cb) in subscribers.iter() {
+                cb(&*state);
+            }
+            Ok(())
         }
-        Ok(())
+        #[cfg(not(feature = "st-no-reentry"))]
+        {
+            let (state_snapshot, subscribers_snapshot) = {
+                let mut state = self
+                    .inner
+                    .state
+                    .try_borrow_mut()
+                    .map_err(|_| StoreError::Poisoned)?;
+                update(&mut state);
+                let state_snapshot = state.clone();
+
+                let subscribers = self
+                    .inner
+                    .subscribers
+                    .try_borrow()
+                    .map_err(|_| StoreError::Poisoned)?;
+
+                let subscribers_snapshot: Vec<_> = subscribers
+                    .iter()
+                    .map(|(id, cb)| (*id, Arc::clone(cb)))
+                    .collect();
+
+                (state_snapshot, subscribers_snapshot)
+            };
+
+            for (_, cb) in subscribers_snapshot {
+                cb(&state_snapshot);
+            }
+            Ok(())
+        }
     }
 
     /// Subscribe to state changes.
@@ -136,12 +159,19 @@ where
         let id = self.inner.next_id.get();
         self.inner.next_id.set(id + 1);
 
-        let mut subscribers = self
-            .inner
-            .subscribers
-            .try_borrow_mut()
-            .map_err(|_| StoreError::Poisoned)?;
-        subscribers.push((id, Arc::new(callback)));
+        #[cfg(feature = "st-no-reentry")]
+        {
+            self.inner.subscribers.borrow_mut().push((id, Arc::new(callback)));
+        }
+        #[cfg(not(feature = "st-no-reentry"))]
+        {
+            let mut subscribers = self
+                .inner
+                .subscribers
+                .try_borrow_mut()
+                .map_err(|_| StoreError::Poisoned)?;
+            subscribers.push((id, Arc::new(callback)));
+        }
         Ok(Subscription {
             store: Arc::downgrade(&self.inner),
             id,

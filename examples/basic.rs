@@ -6,14 +6,13 @@ async fn main() {
 
     let _sub = store
         .subscribe(|v| println!("Count is now: {}", v))
-        .await
         .unwrap();
 
     println!("Incrementing...");
-    store.set(|s| *s += 1).await.unwrap();
+    store.set(|s| *s += 1).unwrap();
 
     println!("Incrementing again...");
-    store.set(|s| *s += 1).await.unwrap();
+    store.set(|s| *s += 1).unwrap();
 
-    println!("Final value: {}", store.get().await.unwrap());
+    println!("Final value: {}", store.get().unwrap());
 }

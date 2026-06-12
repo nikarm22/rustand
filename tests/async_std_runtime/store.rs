@@ -20,11 +20,11 @@ async fn test_store_get_set() {
     let store = Store::new(0);
 
     // Initial value
-    assert_eq!(store.get().await.unwrap(), 0);
+    assert_eq!(store.get().unwrap(), 0);
 
     // Update value
-    store.set(|s| *s += 1).await.unwrap();
-    assert_eq!(store.get().await.unwrap(), 1);
+    store.set(|s| *s += 1).unwrap();
+    assert_eq!(store.get().unwrap(), 1);
 }
 
 #[async_std::test]
@@ -35,13 +35,12 @@ async fn test_deadlock_on_get_in_subscriber_async_std() {
         .subscribe({
             let store = store.clone();
             move |_v| {
-                let _ = store.get_sync().unwrap();
+                let _ = store.get().unwrap();
             }
         })
-        .await
         .unwrap();
 
-    store.set(|s| *s = 1).await.unwrap();
+    store.set(|s| *s = 1).unwrap();
 }
 
 #[async_std::test]
@@ -53,16 +52,15 @@ async fn test_deadlock_on_set_in_subscriber_async_std() {
             let store = store.clone();
             move |v| {
                 if *v == 1 {
-                    store.set_sync(|s| *s = 2).unwrap();
+                    store.set(|s| *s = 2).unwrap();
                 }
             }
         })
-        .await
         .unwrap();
 
-    store.set(|s| *s = 1).await.unwrap();
+    store.set(|s| *s = 1).unwrap();
 
-    assert_eventually(Duration::from_secs(1), || store.get_sync().unwrap() == 2).await;
+    assert_eventually(Duration::from_secs(1), || store.get().unwrap() == 2).await;
 }
 
 #[async_std::test]
@@ -72,21 +70,21 @@ async fn test_async_std_get_set() {
     let t1 = async_std::task::spawn({
         let store = store.clone();
         async move {
-            store.set(|s| *s += 1).await.unwrap();
+            store.set(|s| *s += 1).unwrap();
         }
     });
 
     let t2 = async_std::task::spawn({
         let store = store.clone();
         async move {
-            store.set(|s| *s += 1).await.unwrap();
+            store.set(|s| *s += 1).unwrap();
         }
     });
 
     t1.await;
     t2.await;
 
-    assert_eq!(store.get().await.unwrap(), 2);
+    assert_eq!(store.get().unwrap(), 2);
 }
 
 #[async_std::test]
@@ -102,10 +100,9 @@ async fn test_async_std_subscribe() {
                 *c = *v;
             }
         })
-        .await
         .unwrap();
 
-    store.set(|s| *s = 42).await.unwrap();
+    store.set(|s| *s = 42).unwrap();
 
     assert_eventually(Duration::from_secs(1), || *called.lock().unwrap() == 42).await;
 }

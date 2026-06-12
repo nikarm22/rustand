@@ -48,7 +48,7 @@ This project was born out of frustration while developing a [Slint](https://slin
 
 ## 💻 Quick Start
 
-### Multi-threaded (Async)
+### Multi-threaded
 ```rust
 use rustand::Store;
 
@@ -56,9 +56,9 @@ use rustand::Store;
 async fn main() {
     let store = Store::new(0);
 
-    let _sub = store.subscribe(|v| println!("Value: {}", v)).await.unwrap();
+    let _sub = store.subscribe(|v| println!("Value: {}", v)).unwrap();
 
-    store.set(|s| *s += 1).await.unwrap();
+    store.set(|s| *s += 1).unwrap();
 }
 ```
 
@@ -69,8 +69,8 @@ use rustand::Store;
 fn main() {
     let store = Store::new("Hello".to_string());
 
-    store.subscribe_sync(|v| println!("State: {}", v)).unwrap();
-    store.set_sync(|s| *s = "World".to_string()).unwrap();
+    store.subscribe(|v| println!("State: {}", v)).unwrap();
+    store.set(|s| *s = "World".to_string()).unwrap();
 }
 ```
 

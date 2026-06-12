@@ -7,17 +7,22 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 const TEST_DURATION: Duration = Duration::from_secs(5);
+const NUM_CORES: usize = 6;
 
 fn main() {
     println!("Starting Multithreaded Benchmarks...");
+    println!("System Cores: {}", NUM_CORES);
     println!("Each test runs for {:?}\n", TEST_DURATION);
 
-    println!("--- 6-Core Performance Tests ---");
-    run_perf_test("1. 0W, 6R", 0, 6);
-    run_perf_test("2. 1W, 5R", 1, 5);
+    println!("--- Balanced Baseline ---");
+    run_perf_test("1W, 1R", 1, 1);
+
+    println!("\n--- {}-Core Performance Tests ---", NUM_CORES);
+    run_perf_test("1. 0W, 6R", 0, NUM_CORES);
+    run_perf_test("2. 1W, 5R", 1, NUM_CORES - 1);
     run_perf_test("3. 3W, 3R", 3, 3);
-    run_perf_test("4. 5W, 1R", 5, 1);
-    run_perf_test("5. 6W, 0R", 6, 0);
+    run_perf_test("4. 5W, 1R", NUM_CORES - 1, 1);
+    run_perf_test("5. 6W, 0R", NUM_CORES, 0);
 
     println!("\n--- 6-Core Latency & Subscription Tests ---");
     run_latency_test("1. Minimal Subscriptions (6W, 1 Sub)", 6, 1);
@@ -49,7 +54,7 @@ fn run_perf_test(name: &str, num_writers: usize, num_readers: usize) {
         threads.push(thread::spawn(move || {
             barrier.wait();
             while running.load(Ordering::Relaxed) {
-                let _ = black_box(store.set_sync(|s| *s += 1));
+                let _ = black_box(store.set(|s| *s += 1));
                 write_count.fetch_add(1, Ordering::Relaxed);
             }
         }));
@@ -63,7 +68,7 @@ fn run_perf_test(name: &str, num_writers: usize, num_readers: usize) {
         threads.push(thread::spawn(move || {
             barrier.wait();
             while running.load(Ordering::Relaxed) {
-                let _ = black_box(store.get_sync());
+                let _ = black_box(store.get());
                 read_count.fetch_add(1, Ordering::Relaxed);
             }
         }));
@@ -97,7 +102,7 @@ fn run_latency_test(name: &str, num_writers: usize, num_subs: usize) {
     // Add subscribers
     let mut _subs = vec![];
     for _ in 0..num_subs {
-        _subs.push(store.subscribe_sync(|_| {}).unwrap());
+        _subs.push(store.subscribe(|_| {}).unwrap());
     }
 
     let mut threads = vec![];
@@ -112,7 +117,7 @@ fn run_latency_test(name: &str, num_writers: usize, num_subs: usize) {
             barrier.wait();
             while running.load(Ordering::Relaxed) {
                 let start = Instant::now();
-                let _ = black_box(store.set_sync(|s| *s += 1));
+                let _ = black_box(store.set(|s| *s += 1));
                 let latency = start.elapsed().as_nanos() as u64;
                 total_latency_ns.fetch_add(latency, Ordering::Relaxed);
                 write_count.fetch_add(1, Ordering::Relaxed);

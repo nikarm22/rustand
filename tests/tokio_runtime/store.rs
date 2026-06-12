@@ -20,11 +20,11 @@ async fn test_store_get_set() {
     let store = Store::new(0);
 
     // Initial value
-    assert_eq!(store.get().await.unwrap(), 0);
+    assert_eq!(store.get().unwrap(), 0);
 
     // Update value
-    store.set(|s| *s += 1).await.unwrap();
-    assert_eq!(store.get().await.unwrap(), 1);
+    store.set(|s| *s += 1).unwrap();
+    assert_eq!(store.get().unwrap(), 1);
 }
 
 #[tokio::test]
@@ -37,16 +37,15 @@ async fn test_deadlock_on_get_in_subscriber_tokio() {
             move |_v| {
                 let store = store.clone();
                 std::thread::spawn(move || {
-                    let _ = store.get_sync().unwrap();
+                    let _ = store.get().unwrap();
                 })
                 .join()
                 .unwrap();
             }
         })
-        .await
         .unwrap();
 
-    store.set(|s| *s = 1).await.unwrap();
+    store.set(|s| *s = 1).unwrap();
 }
 
 #[tokio::test]
@@ -60,19 +59,18 @@ async fn test_deadlock_on_set_in_subscriber_tokio() {
                 if *v == 1 {
                     let store = store.clone();
                     std::thread::spawn(move || {
-                        store.set_sync(|s| *s = 2).unwrap();
+                        store.set(|s| *s = 2).unwrap();
                     })
                     .join()
                     .unwrap();
                 }
             }
         })
-        .await
         .unwrap();
 
-    store.set(|s| *s = 1).await.unwrap();
+    store.set(|s| *s = 1).unwrap();
 
-    assert_eventually(Duration::from_secs(1), || store.get_sync().unwrap() == 2).await;
+    assert_eventually(Duration::from_secs(1), || store.get().unwrap() == 2).await;
 }
 
 #[tokio::test]
@@ -82,21 +80,21 @@ async fn test_tokio_async_get_set() {
     let t1 = tokio::spawn({
         let store = store.clone();
         async move {
-            store.set(|s| *s += 1).await.unwrap();
+            store.set(|s| *s += 1).unwrap();
         }
     });
 
     let t2 = tokio::spawn({
         let store = store.clone();
         async move {
-            store.set(|s| *s += 1).await.unwrap();
+            store.set(|s| *s += 1).unwrap();
         }
     });
 
     t1.await.unwrap();
     t2.await.unwrap();
 
-    assert_eq!(store.get().await.unwrap(), 2);
+    assert_eq!(store.get().unwrap(), 2);
 }
 
 #[tokio::test]
@@ -112,10 +110,9 @@ async fn test_tokio_subscribe() {
                 *c = *v;
             }
         })
-        .await
         .unwrap();
 
-    store.set(|s| *s = 42).await.unwrap();
+    store.set(|s| *s = 42).unwrap();
 
     assert_eventually(Duration::from_secs(1), || *called.lock().unwrap() == 42).await;
 }

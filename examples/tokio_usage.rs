@@ -14,7 +14,6 @@ async fn main() {
         .subscribe(|list| {
             println!("Subscriber: List updated, size is now {}", list.len());
         })
-        .await
         .unwrap();
 
     // Perform an async update
@@ -24,7 +23,6 @@ async fn main() {
             tokio::time::sleep(Duration::from_millis(100)).await;
             store
                 .set(|s| s.push("From Task 1".to_string()))
-                .await
                 .unwrap();
         }
     });
@@ -33,13 +31,13 @@ async fn main() {
     // This is useful if you are calling from a non-async context
     // or just want to fire-and-forget.
     store
-        .set_sync(|s| s.push("From Sync Call".to_string()))
+        .set(|s| s.push("From Sync Call".to_string()))
         .unwrap();
 
     // Wait a bit to let the async task finish
     tokio::time::sleep(Duration::from_millis(200)).await;
 
-    let final_state = store.get().await.unwrap();
+    let final_state = store.get().unwrap();
     println!("Final State: {:?}", final_state);
 }
 

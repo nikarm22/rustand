@@ -23,18 +23,16 @@
 //! ```rust
 //! use rustand::Store;
 //!
-//! # tokio_test::block_on(async {
 //! let store = Store::new(0);
 //!
 //! // Subscribe to changes
-//! let _sub = store.subscribe(|v| println!("New value: {}", v)).await.unwrap();
+//! let _sub = store.subscribe(|v| println!("New value: {}", v)).unwrap();
 //!
 //! // Update state
-//! store.set(|s| *s += 1).await.unwrap();
+//! store.set(|s| *s += 1).unwrap();
 //!
 //! // Get state
-//! assert_eq!(store.get().await.unwrap(), 1);
-//! # });
+//! assert_eq!(store.get().unwrap(), 1);
 //! ```
 //!
 //! ## Ecosystem Integrations (Planned)
@@ -44,7 +42,7 @@
 //! - `rustand-egui`
 //! - `rustand-redox`
 
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 #![deny(missing_docs)]
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 

@@ -24,8 +24,8 @@ Optimized for 6-core hardware to minimize context switching overhead.
 ## Analysis of the Performance Gap
 The drop from **~1.5B reads/sec (ST)** to **~6.8M reads/sec (MT)** is primarily due to three factors:
 
-1.  **Atomic Overhead & Memory Barriers**: In `multi-threaded` mode, every `get_sync` and `set_sync` must acquire an `RwLock`. Unlike `RefCell` (which uses simple counter checks), `RwLock` uses atomic operations and memory barriers to ensure visibility across CPU caches. This is inherently orders of magnitude slower than non-atomic operations.
-2.  **Notification Pipeline**: Every `set_sync` in MT mode performs an `mpsc::send` to a background worker thread. This cross-thread communication involves synchronization and potential thread wake-ups.
+1.  **Atomic Overhead & Memory Barriers**: In `multi-threaded` mode, every `get` and `set` must acquire an `RwLock`. Unlike `RefCell` (which uses simple counter checks), `RwLock` uses atomic operations and memory barriers to ensure visibility across CPU caches. This is inherently orders of magnitude slower than non-atomic operations.
+2.  **Notification Pipeline**: Every `set` in MT mode performs an `mpsc::send` to a background worker thread. This cross-thread communication involves synchronization and potential thread wake-ups.
 3.  **Context Switching**: When running 8 threads on a 6-core machine (previous MT results), performance dropped significantly (e.g., Write-Only fell from **1.7M** to **0.8M**). The 6-core tests above show better scaling by aligning with the hardware.
 
 ---

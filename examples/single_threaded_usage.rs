@@ -14,14 +14,14 @@ fn main() {
 
     // Subscriptions work the same way
     let _sub = store
-        .subscribe_sync(|v| println!("Value changed to: {}", v))
+        .subscribe(|v| println!("Value changed to: {}", v))
         .unwrap();
 
     for i in 1..=5 {
-        store.set_sync(|s| *s = i).unwrap();
+        store.set(|s| *s = i).unwrap();
     }
 
-    assert_eq!(store.get_sync().unwrap(), 5);
+    assert_eq!(store.get().unwrap(), 5);
 }
 
 #[cfg(not(feature = "single-threaded"))]

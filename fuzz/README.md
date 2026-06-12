@@ -38,8 +38,8 @@ cargo +nightly fuzz run async_std --features async_std
 ## Fuzzing Logic
 
 The fuzzers use the `arbitrary` crate to generate a sequence of `Operation`s:
-- `Get`: Calls `store.get().await`.
-- `Set(u32)`: Calls `store.set(|s| *s = val).await`.
+- `Get`: Calls `store.get()`.
+- `Set(u32)`: Calls `store.set(|s| *s = val)`.
 - `Subscribe`: Adds a new subscriber.
 - `Unsubscribe(idx)`: Removes an existing subscriber by index.
 - `Wait`: Yields the executor to allow background tasks to process.

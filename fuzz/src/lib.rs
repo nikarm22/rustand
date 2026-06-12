@@ -18,14 +18,14 @@ pub async fn run_fuzz(ops: Vec<Operation>) {
     for op in ops {
         match op {
             Operation::Get => {
-                let _ = store.get().await;
+                let _ = store.get();
             }
             Operation::Set(val) => {
-                let _ = store.set(move |s| *s = val).await;
+                let _ = store.set(move |s| *s = val);
             }
             Operation::Subscribe => {
                 let mut s = subs.lock().unwrap();
-                if let Ok(sub) = store.subscribe(|_| {}).await {
+                if let Ok(sub) = store.subscribe(|_| {}) {
                     s.push(sub);
                 }
             }

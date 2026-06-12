@@ -17,7 +17,7 @@ fn store() -> &'static Store<i32> {
 #[cfg(not(feature = "single-threaded"))]
 async fn increment_task(name: &str) {
     for _ in 0..5 {
-        store().set(|s| *s += 1).await.unwrap();
+        store().set(|s| *s += 1).unwrap();
         println!("Task {} incremented the global store.", name);
         tokio::time::sleep(std::time::Duration::from_millis(10)).await;
     }
@@ -26,7 +26,7 @@ async fn increment_task(name: &str) {
 #[cfg(not(feature = "single-threaded"))]
 #[tokio::main]
 async fn main() {
-    println!("Initial global value: {}", store().get().await.unwrap());
+    println!("Initial global value: {}", store().get().unwrap());
 
     // Multiple tasks can easily access the global store without passing it around
     let t1 = tokio::spawn(increment_task("A"));
@@ -37,13 +37,12 @@ async fn main() {
         .subscribe(|v| {
             println!("Global Subscriber: value is now {}", v);
         })
-        .await
         .unwrap();
 
     let _ = tokio::join!(t1, t2);
 
-    println!("Final global value: {}", store().get().await.unwrap());
-    assert_eq!(store().get().await.unwrap(), 10);
+    println!("Final global value: {}", store().get().unwrap());
+    assert_eq!(store().get().unwrap(), 10);
 }
 
 #[cfg(feature = "single-threaded")]

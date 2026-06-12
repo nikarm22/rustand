@@ -14,7 +14,6 @@ async fn test_subscription_clone_behavior() {
                 *c = *v;
             }
         })
-        .await
         .unwrap();
 
     let sub_clone = sub.clone();
@@ -23,7 +22,7 @@ async fn test_subscription_clone_behavior() {
     drop(sub_clone);
 
     // This should have unsubscribed the original too because they share the same ID
-    store.set(|s| *s = 42).await.unwrap();
+    store.set(|s| *s = 42).unwrap();
 
     // Wait a bit
     tokio::time::sleep(std::time::Duration::from_millis(50)).await;
@@ -36,6 +35,7 @@ async fn test_subscription_clone_behavior() {
 }
 
 #[tokio::test]
+#[cfg(not(any(feature = "mt-no-reentry", feature = "mt-ring", feature = "mt-ring-unsafe")))]
 async fn test_drop_subscription_in_callback() {
     let store = Store::new(0);
     let called_count = Arc::new(Mutex::new(0));
@@ -55,20 +55,19 @@ async fn test_drop_subscription_in_callback() {
                 let _ = sub_holder.lock().unwrap().take();
             }
         })
-        .await
         .unwrap();
 
     *sub_holder.lock().unwrap() = Some(sub);
 
     // First update should trigger callback and drop subscription
-    store.set(|s| *s = 1).await.unwrap();
+    store.set(|s| *s = 1).unwrap();
 
     // Give it time to process
     tokio::time::sleep(std::time::Duration::from_millis(50)).await;
     assert_eq!(*called_count.lock().unwrap(), 1);
 
     // Second update should NOT trigger callback
-    store.set(|s| *s = 2).await.unwrap();
+    store.set(|s| *s = 2).unwrap();
     tokio::time::sleep(std::time::Duration::from_millis(50)).await;
     assert_eq!(
         *called_count.lock().unwrap(),
@@ -86,7 +85,7 @@ async fn test_high_concurrency_multi_threaded() {
         let store = store.clone();
         handles.push(tokio::spawn(async move {
             for _ in 0..100 {
-                store.set(|s| *s += 1).await.unwrap();
+                store.set(|s| *s += 1).unwrap();
             }
         }));
     }
@@ -95,7 +94,7 @@ async fn test_high_concurrency_multi_threaded() {
         handle.await.unwrap();
     }
 
-    assert_eq!(store.get().await.unwrap(), 1000);
+    assert_eq!(store.get().unwrap(), 1000);
 }
 
 #[tokio::test]
@@ -117,14 +116,13 @@ async fn test_explicit_unsubscribe() {
                 *c = true;
             }
         })
-        .await
         .unwrap();
 
     let id = 0;
 
     store.unsubscribe(id).unwrap();
 
-    store.set(|s| *s = 1).await.unwrap();
+    store.set(|s| *s = 1).unwrap();
     tokio::time::sleep(std::time::Duration::from_millis(50)).await;
 
     // It should NOT have been called

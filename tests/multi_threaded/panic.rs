@@ -1,7 +1,9 @@
 use rustand::Store;
+#[cfg(any(feature = "mt-no-reentry", feature = "mt-ring", feature = "mt-ring-unsafe"))]
 use std::sync::{Arc, Mutex};
 
 #[tokio::test]
+#[cfg(any(feature = "mt-no-reentry", feature = "mt-ring", feature = "mt-ring-unsafe"))]
 async fn test_panic_safety_multi_threaded() {
     let store = Store::new(0);
     let called = Arc::new(Mutex::new(false));
@@ -10,7 +12,6 @@ async fn test_panic_safety_multi_threaded() {
         .subscribe(|_| {
             panic!("Subscriber panicked!");
         })
-        .await
         .unwrap();
 
     let _sub2 = store
@@ -21,17 +22,13 @@ async fn test_panic_safety_multi_threaded() {
                 *c = true;
             }
         })
-        .await
         .unwrap();
 
     // This might panic if run in the same thread, but since it's an async test,
     // it depends on how the runtime handles it.
-    // In multi-threaded mode, set_sync is called directly.
+    // In multi-threaded mode, set is called directly.
     let result = std::panic::catch_unwind(|| {
-        let rt = tokio::runtime::Handle::current();
-        rt.block_on(async {
-            store.set(|s| *s = 1).await.unwrap();
-        });
+        store.set(|s| *s = 1).unwrap();
     });
 
     assert!(
@@ -55,15 +52,15 @@ fn test_store_poisoning() {
     let _ = std::thread::spawn({
         let store = store.clone();
         move || {
-            let _ = store.set_sync(|_| panic!("Poisoning!"));
+            let _ = store.set(|_| panic!("Poisoning!"));
         }
     })
     .join();
 
     // Subsequent calls should return Error::Poisoned
-    let result = store.get_sync();
+    let result = store.get();
     assert!(matches!(result, Err(rustand::StoreError::Poisoned)));
 
-    let result = store.set_sync(|s| *s = 1);
+    let result = store.set(|s| *s = 1);
     assert!(matches!(result, Err(rustand::StoreError::Poisoned)));
 }

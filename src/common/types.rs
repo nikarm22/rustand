@@ -4,6 +4,7 @@ use std::sync::Arc;
 pub type SubscriberId = usize;
 
 /// Events processed by the background subscriber worker.
+#[allow(dead_code)]
 pub enum StoreEvent<T, Cb> {
     /// State has changed, notify subscribers with the new snapshot.
     StateChanged(Arc<T>),

@@ -25,7 +25,7 @@ fn run_read_only() {
     let store = Store::new(0);
     let start = Instant::now();
     for _ in 0..ITERATIONS {
-        let _ = black_box(store.get_sync());
+        let _ = black_box(store.get());
     }
     let elapsed = start.elapsed();
     print_results("1. Read-Only", ITERATIONS, 0, elapsed);
@@ -36,9 +36,9 @@ fn run_read_heavy() {
     let start = Instant::now();
     for _ in 0..ITERATIONS {
         for _ in 0..7 {
-            let _ = black_box(store.get_sync());
+            let _ = black_box(store.get());
         }
-        let _ = black_box(store.set_sync(|s| *s += 1));
+        let _ = black_box(store.set(|s| *s += 1));
     }
     let elapsed = start.elapsed();
     print_results("2. Read-Heavy (7R:1W)", ITERATIONS * 7, ITERATIONS, elapsed);
@@ -48,8 +48,8 @@ fn run_contested() {
     let store = Store::new(0);
     let start = Instant::now();
     for _ in 0..ITERATIONS {
-        let _ = black_box(store.set_sync(|s| *s += 1));
-        let _ = black_box(store.get_sync());
+        let _ = black_box(store.set(|s| *s += 1));
+        let _ = black_box(store.get());
     }
     let elapsed = start.elapsed();
     print_results("3. Contested (1W:1R)", ITERATIONS, ITERATIONS, elapsed);
@@ -60,9 +60,9 @@ fn run_write_heavy() {
     let start = Instant::now();
     for _ in 0..ITERATIONS {
         for _ in 0..7 {
-            let _ = black_box(store.set_sync(|s| *s += 1));
+            let _ = black_box(store.set(|s| *s += 1));
         }
-        let _ = black_box(store.get_sync());
+        let _ = black_box(store.get());
     }
     let elapsed = start.elapsed();
     print_results("4. Write-Heavy (7W:1R)", ITERATIONS, ITERATIONS * 7, elapsed);
@@ -72,7 +72,7 @@ fn run_write_only() {
     let store = Store::new(0);
     let start = Instant::now();
     for _ in 0..ITERATIONS {
-        let _ = black_box(store.set_sync(|s| *s += 1));
+        let _ = black_box(store.set(|s| *s += 1));
     }
     let elapsed = start.elapsed();
     print_results("5. Write-Only", 0, ITERATIONS, elapsed);
@@ -82,7 +82,7 @@ fn run_latency_test(name: &str, num_subs: usize) {
     let store = Store::new(0);
     let mut _subs = vec![];
     for _ in 0..num_subs {
-        _subs.push(store.subscribe_sync(|_| {}).unwrap());
+        _subs.push(store.subscribe(|_| {}).unwrap());
     }
 
     // Keep iterations consistent to avoid measurement jitter
@@ -92,7 +92,7 @@ fn run_latency_test(name: &str, num_subs: usize) {
     let start = Instant::now();
     for _ in 0..iters {
         let write_start = Instant::now();
-        let _ = black_box(store.set_sync(|s| *s += 1));
+        let _ = black_box(store.set(|s| *s += 1));
         total_latency += write_start.elapsed();
     }
     let elapsed = start.elapsed();

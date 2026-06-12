@@ -27,10 +27,9 @@ async fn test_store_subscribe() {
             let mut called = called_clone.lock().unwrap();
             *called = *value == 10;
         })
-        .await
         .unwrap();
 
-    store.set(|s| *s = 10).await.unwrap();
+    store.set(|s| *s = 10).unwrap();
 
     assert_eventually(Duration::from_secs(1), || *called.lock().unwrap()).await;
 }
@@ -46,13 +45,12 @@ async fn test_unsubscribe() {
             let mut called = called_clone.lock().unwrap();
             *called = true;
         })
-        .await
         .unwrap();
 
     // Drop subscription to unsubscribe
     drop(subscription);
 
-    store.set(|s| *s += 1).await.unwrap();
+    store.set(|s| *s += 1).unwrap();
 
     // Wait a bit to ensure it WASN'T called
     tokio::time::sleep(Duration::from_millis(50)).await;
@@ -74,7 +72,6 @@ async fn test_multiple_subscribers() {
                 let mut c = called1.lock().unwrap();
                 *c = *v;
             })
-            .await
             .unwrap()
     };
 
@@ -85,11 +82,10 @@ async fn test_multiple_subscribers() {
                 let mut c = called2.lock().unwrap();
                 *c = *v;
             })
-            .await
             .unwrap()
     };
 
-    store.set(|s| *s = 42).await.unwrap();
+    store.set(|s| *s = 42).unwrap();
 
     assert_eventually(Duration::from_secs(1), || {
         *called1.lock().unwrap() == 42 && *called2.lock().unwrap() == 42
@@ -104,7 +100,7 @@ async fn test_multiple_subscribers() {
     *called1.lock().unwrap() = 0;
     *called2.lock().unwrap() = 0;
 
-    store.set(|s| *s = 100).await.unwrap();
+    store.set(|s| *s = 100).unwrap();
 
     // Wait a bit
     tokio::time::sleep(Duration::from_millis(50)).await;

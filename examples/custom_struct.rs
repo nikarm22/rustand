@@ -23,10 +23,9 @@ async fn main() {
         .subscribe(|state| {
             println!("Subscriber: Current items: {:?}", state.items);
         })
-        .await
         .unwrap();
 
-    println!("Initial state: {:?}", store.get().await.unwrap());
+    println!("Initial state: {:?}", store.get().unwrap());
 
     // Update specific fields within the struct
     println!("Adding items...");
@@ -35,7 +34,6 @@ async fn main() {
             state.score += 10;
             state.items.push("Ferris".to_string());
         })
-        .await
         .unwrap();
 
     store
@@ -43,10 +41,9 @@ async fn main() {
             state.user_name = "MasterRust".to_string();
             state.items.push("Crab".to_string());
         })
-        .await
         .unwrap();
 
-    let final_state = store.get().await.unwrap();
+    let final_state = store.get().unwrap();
     println!("Final State: {:#?}", final_state);
 
     assert_eq!(final_state.score, 10);

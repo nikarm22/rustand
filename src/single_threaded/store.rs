@@ -33,20 +33,7 @@ where
     /// # Errors
     ///
     /// Returns [`StoreError::Poisoned`] if the state is currently being updated.
-    #[allow(clippy::future_not_send, clippy::unused_async)]
-    pub async fn get(&self) -> Result<T, StoreError>
-    where
-        T: Clone,
-    {
-        self.get_sync()
-    }
-
-    /// Synchronous version of [`Store::get`].
-    ///
-    /// # Errors
-    ///
-    /// Returns [`StoreError::Poisoned`] if the state is currently being updated.
-    pub fn get_sync(&self) -> Result<T, StoreError>
+    pub fn get(&self) -> Result<T, StoreError>
     where
         T: Clone,
     {
@@ -65,26 +52,20 @@ where
         }
     }
 
+    /// Asynchronous version of [`Store::get`].
+    pub async fn get_async(&self) -> Result<T, StoreError>
+    where
+        T: Clone,
+    {
+        self.get()
+    }
+
     /// Update the state using a closure.
     ///
     /// # Errors
     ///
     /// Returns [`StoreError::Poisoned`] if the state is currently being accessed.
-    #[allow(clippy::future_not_send, clippy::unused_async)]
-    pub async fn set<F>(&self, update: F) -> Result<(), StoreError>
-    where
-        F: FnOnce(&mut T),
-        T: Clone,
-    {
-        self.set_sync(update)
-    }
-
-    /// Synchronous version of [`Store::set`].
-    ///
-    /// # Errors
-    ///
-    /// Returns [`StoreError::Poisoned`] if the state is currently being accessed.
-    pub fn set_sync<F>(&self, update: F) -> Result<(), StoreError>
+    pub fn set<F>(&self, update: F) -> Result<(), StoreError>
     where
         F: FnOnce(&mut T),
         T: Clone,
@@ -134,25 +115,21 @@ where
         }
     }
 
+    /// Asynchronous version of [`Store::set`].
+    pub async fn set_async<F>(&self, update: F) -> Result<(), StoreError>
+    where
+        F: FnOnce(&mut T),
+        T: Clone,
+    {
+        self.set(update)
+    }
+
     /// Subscribe to state changes.
     ///
     /// # Errors
     ///
     /// Returns [`StoreError::Poisoned`] if the subscriber list is currently being accessed.
-    #[allow(clippy::future_not_send, clippy::unused_async)]
-    pub async fn subscribe<F>(&self, callback: F) -> Result<Subscription<T>, StoreError>
-    where
-        F: Fn(&T) + 'static,
-    {
-        self.subscribe_sync(callback)
-    }
-
-    /// Synchronous version of [`Store::subscribe`].
-    ///
-    /// # Errors
-    ///
-    /// Returns [`StoreError::Poisoned`] if the subscriber list is currently being accessed.
-    pub fn subscribe_sync<F>(&self, callback: F) -> Result<Subscription<T>, StoreError>
+    pub fn subscribe<F>(&self, callback: F) -> Result<Subscription<T>, StoreError>
     where
         F: Fn(&T) + 'static,
     {
@@ -176,6 +153,14 @@ where
             store: Arc::downgrade(&self.inner),
             id,
         })
+    }
+
+    /// Asynchronous version of [`Store::subscribe`].
+    pub async fn subscribe_async<F>(&self, callback: F) -> Result<Subscription<T>, StoreError>
+    where
+        F: Fn(&T) + 'static,
+    {
+        self.subscribe(callback)
     }
 
     /// Unsubscribe a subscriber by ID.

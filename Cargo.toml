@@ -35,9 +35,5 @@ tokio = ["dep:tokio", "dep:futures-lite"]
 async-std = ["dep:async-std"]
 
 [[bench]]
-name = "mt-bench"
-harness = false
-
-[[bench]]
 name = "st-bench"
 harness = false

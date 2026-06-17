@@ -11,6 +11,16 @@ where
     pub(crate) inner: Arc<InnerStore<T>>,
 }
 
+struct UpdateGuard<'a> {
+    flag: &'a std::cell::Cell<bool>,
+}
+
+impl Drop for UpdateGuard<'_> {
+    fn drop(&mut self) {
+        self.flag.set(false);
+    }
+}
+
 impl<T> Store<T>
 where
     T: 'static,
@@ -29,6 +39,7 @@ where
     }
 
     /// Get a clone of the current state.
+    #[must_use]
     pub fn get(&self) -> T
     where
         T: Clone,
@@ -45,21 +56,14 @@ where
     where
         F: FnOnce(&mut T),
     {
-        if self.inner.is_updating.get() {
-            panic!("Recursive store.set() detected. You cannot update the store from within another update or a subscriber.");
-        }
+        assert!(
+            !self.inner.is_updating.get(),
+            "Recursive store.set() detected. You cannot update the store from within another update or a subscriber."
+        );
 
         self.inner.is_updating.set(true);
 
         // Ensure is_updating is reset even if update or subscribers panic
-        struct UpdateGuard<'a> {
-            flag: &'a std::cell::Cell<bool>,
-        }
-        impl Drop for UpdateGuard<'_> {
-            fn drop(&mut self) {
-                self.flag.set(false);
-            }
-        }
         let _guard = UpdateGuard {
             flag: &self.inner.is_updating,
         };

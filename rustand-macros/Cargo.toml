@@ -7,6 +7,9 @@ license = "MIT"
 repository = "https://github.com/nikarm22/rustand"
 documentation = "https://docs.rs/rustand"
 homepage = "https://github.com/nikarm22/rustand"
+readme = "../README.md"
+keywords = ["state", "management", "zustand", "store", "reactive", "proc-macro"]
+categories = ["concurrency", "rust-patterns", "wasm", "development-tools::procedural-macros"]
 
 [lib]
 proc-macro = true

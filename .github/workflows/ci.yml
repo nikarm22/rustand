@@ -79,7 +79,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Publish Placeholder
-        run: |
-          echo "Release detected. This is where 'cargo publish' would run."
-          # cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
+      - name: Publish rustand-macros
+        run: cargo publish -p rustand-macros --token ${{ secrets.CRATES_IO_TOKEN }}
+      - name: Publish rustand
+        run: cargo publish -p rustand --token ${{ secrets.CRATES_IO_TOKEN }}

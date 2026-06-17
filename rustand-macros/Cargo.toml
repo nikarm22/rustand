@@ -2,7 +2,11 @@
 name = "rustand-macros"
 version = "0.1.0"
 edition = "2024"
-publish = false
+description = "Procedural macros for the rustand state management library."
+license = "MIT"
+repository = "https://github.com/nikarm22/rustand"
+documentation = "https://docs.rs/rustand"
+homepage = "https://github.com/nikarm22/rustand"
 
 [lib]
 proc-macro = true

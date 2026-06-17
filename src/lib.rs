@@ -39,6 +39,7 @@ mod single_threaded;
 mod store;
 mod subscription;
 
+#[cfg(feature = "macros")]
 pub use rustand_macros::{global_store, store_actions};
 pub use store::Store;
 pub use subscription::{SubscriberCallback, SubscriberId, Subscription};

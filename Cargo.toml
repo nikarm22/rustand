@@ -15,9 +15,14 @@ homepage = "https://github.com/nikarm22/rustand"
 members = ["rustand-macros", "fuzz"]
 
 [dependencies]
-rustand-macros = { path = "rustand-macros", version = "0.1.0" }
+rustand-macros = { path = "rustand-macros", version = "0.1.0", optional = true }
+
+[[example]]
+name = "global_store"
+required-features = ["macros"]
 
 [features]
-default = ["single-threaded"]
+default = ["single-threaded", "macros"]
 single-threaded = []
 wasm = ["single-threaded"]
+macros = ["dep:rustand-macros"]

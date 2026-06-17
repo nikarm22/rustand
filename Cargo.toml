@@ -11,29 +11,13 @@ readme = "README.md"
 documentation = "https://docs.rs/rustand"
 homepage = "https://github.com/nikarm22/rustand"
 
-[dependencies]
-tokio = { version = "1", features = ["sync"], optional = true }
-async-std = { version = "1", optional = true }
-futures-lite = { version = "2", optional = true }
+[workspace]
+members = ["rustand-macros", "fuzz"]
 
-[dev-dependencies]
-tokio = { version = "1", features = ["full"] }
-async-std = { version = "1", features = ["attributes"] }
-futures-lite = "2"
-tokio-test = "0.4"
+[dependencies]
+rustand-macros = { path = "rustand-macros", version = "0.1.0" }
 
 [features]
-default = ["multi-threaded"]
-multi-threaded = []
+default = ["single-threaded"]
 single-threaded = []
-st-no-reentry = ["single-threaded"]
-mt-no-reentry = ["multi-threaded"]
-mt-ring = ["multi-threaded"]
-mt-ring-unsafe = ["multi-threaded"]
 wasm = ["single-threaded"]
-tokio = ["dep:tokio", "dep:futures-lite"]
-async-std = ["dep:async-std"]
-
-[[bench]]
-name = "st-bench"
-harness = false

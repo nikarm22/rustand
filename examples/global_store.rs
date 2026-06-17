@@ -1,49 +1,45 @@
-#[cfg(not(feature = "single-threaded"))]
-use rustand::Store;
-#[cfg(not(feature = "single-threaded"))]
-use std::sync::OnceLock;
+use rustand::{Store, global_store, store_actions};
 
-// Define a global store using OnceLock.
-// This allows any part of your application to access the same state.
-#[cfg(not(feature = "single-threaded"))]
-static GLOBAL_STORE: OnceLock<Store<i32>> = OnceLock::new();
-
-/// Helper function to get a reference to the global store
-#[cfg(not(feature = "single-threaded"))]
-fn store() -> &'static Store<i32> {
-    GLOBAL_STORE.get_or_init(|| Store::new(0))
+#[global_store]
+#[derive(Default, Clone)]
+struct State {
+    count: u32,
 }
 
-#[cfg(not(feature = "single-threaded"))]
-async fn increment_task(name: &str) {
-    for _ in 0..5 {
-        store().set(|s| *s += 1).unwrap();
-        println!("Task {} incremented the global store.", name);
-        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+#[store_actions]
+impl Store<State> {
+    fn get_count(&self) -> u32 {
+        self.get().count
+    }
+
+    fn set_count(&self, new_val: u32) {
+        self.set(|s| s.count = new_val);
     }
 }
 
-#[cfg(not(feature = "single-threaded"))]
-#[tokio::main]
-async fn main() {
-    println!("Initial global value: {}", store().get().unwrap());
+fn main() {
+    // Retrieve the global store instance.
+    let store = State::store();
 
-    // Multiple tasks can easily access the global store without passing it around
-    let t1 = tokio::spawn(increment_task("A"));
-    let t2 = tokio::spawn(increment_task("B"));
+    println!("Initial count: {}", store.get_count());
 
-    // We can also subscribe to the global store
-    let _sub = store()
-        .subscribe(|v| {
-            println!("Global Subscriber: value is now {}", v);
-        })
-        .unwrap();
+    let _sub = store
+        .subscribe(|state| {
+            println!("Subscriber notified. New count: {}", state.count);
+        });
 
-    let _ = tokio::join!(t1, t2);
+    {
+        let store2 = State::store();
 
-    println!("Final global value: {}", store().get().unwrap());
-    assert_eq!(store().get().unwrap(), 10);
+        let _sub2 = store2.subscribe(|state| {
+            println!("Subscriber 2 notified. New count: {}", state.count);
+        });
+
+        store.set_count(100);
+    }
+
+    store.set_count(1);
+    store.set_count(2);
+
+    println!("Final count: {}", store.get().count);
 }
-
-#[cfg(feature = "single-threaded")]
-fn main() {}

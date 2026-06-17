@@ -18,8 +18,10 @@ fn test_no_dependencies() {
                     if next_line.starts_with('[') {
                         break;
                     }
-                    // Allow optional dependencies
-                    if !next_line.contains("optional = true") {
+                    // Allow optional dependencies or internal macro workspace members
+                    if !next_line.contains("optional = true")
+                        && !next_line.starts_with("rustand-macros")
+                    {
                         panic!(
                             "Non-optional external dependencies are not allowed: {}",
                             next_line

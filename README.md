@@ -1,97 +1,79 @@
-# rustand
+# rustand 🦀
 
-[![Crates.io](https://img.shields.io/crates/v/rustand.svg)](https://crates.io/crates/rustand)
-[![Documentation](https://docs.rs/rustand/badge.svg)](https://docs.rs/rustand)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![CI](https://github.com/nikarm22/rustand/actions/workflows/ci.yml/badge.svg)](https://github.com/nikarm22/rustand/actions)
+A lightweight, Zustand-inspired state management library for Rust.
 
-**The minimalist, deadlock-free state manager for Rust.**
+If you've used Zustand in the React world, you'll feel right at home. `rustand` provides a simple, infallible, and zero-dependency way to manage shared state in single-threaded environments like WASM or local UI loops.
 
-`rustand` is a lightweight state management library inspired by [Zustand](https://github.com/pmndrs/zustand). It provides a simple `get`/`set`/`subscribe` pattern designed for high-performance concurrent applications, UI frameworks, and WASM environments.
+## Why rustand?
 
-## 🚀 Key Features
+- **Infallible API**: No `.unwrap()` or `Result` everywhere. It just works.
+- **Zero Dependencies**: Core library is 100% dependency-free.
+- **WASM Ready**: Optimized for single-threaded performance using `Rc` and `RefCell`.
+- **Boilerplate Free**: Use macros to turn any struct into a global store or add actions directly to the store.
 
-- **🎯 Simple API:** Minimalist `get`, `set`, and `subscribe` pattern.
-- **🛡️ Stability & Performance:** Deadlock-free by design. Releases locks before notifying subscribers to ensure minimal lock contention and predictable performance.
-- **🏗️ Runtime Agnostic:** Core logic is runtime-independent, with first-class support for **Tokio** and **async-std**.
-- **🦀 Zero Dependencies:** The core remains dependency-free. Runtime-specific features only bring in the necessary dependencies.
-- **🌐 WASM Ready:** Specialized `single-threaded` mode eliminates `Arc` and atomic lock overhead for maximum UI performance.
-- **🔒 Strictly No-Unsafe:** Verified safe Rust.
+## Quick Start
 
----
-
-## 📦 Installation
-
-Add this to your `Cargo.toml`:
-
-```toml
-[dependencies]
-rustand = "0.1"
-```
-
-### Feature Matrix
-
-| Feature | Description | Primitives | Concurrency | Runtime |
-| :--- | :--- | :--- | :--- | :--- |
-| `multi-threaded` | (Default) Thread-safe store. | `Arc` + `RwLock` | `Send + Sync` | `std` |
-| `single-threaded`| High-performance UI/WASM mode. | `Rc` + `RefCell` | `!Send + !Sync` | None |
-| `tokio` | Tokio-specific sync primitives. | `Arc` + `Tokio RwLock` | `Send + Sync` | `tokio` |
-| `async-std` | async-std sync primitives. | `Arc` + `async-std RwLock`| `Send + Sync` | `async-std` |
-
----
-
-## 💡 Motivation
-
-This project was born out of frustration while developing a [Slint](https://slint.dev/) application. Coming from years of front-end development, I found the ergonomics of existing UI state management in Rust to be severely lacking. I believe that in this day and age, managing state should be intuitive and seamless, even in a systems language. `rustand` is my attempt to bring that front-end simplicity to the Rust ecosystem without compromising on safety or performance.
-
----
-
-## 💻 Quick Start
-
-### Multi-threaded
 ```rust
 use rustand::Store;
 
-#[tokio::main]
-async fn main() {
-    let store = Store::new(0);
+// 1. Create a store
+let store = Store::new(0);
 
-    let _sub = store.subscribe(|v| println!("Value: {}", v)).unwrap();
+// 2. Subscribe to changes
+let _sub = store.subscribe(|v| println!("Count is: {}", v));
 
-    store.set(|s| *s += 1).unwrap();
+// 3. Update state (no .unwrap() needed!)
+store.set(|s| *s += 1);
+
+// 4. Get state
+assert_eq!(store.get(), 1);
+```
+
+## Global Stores & Actions
+
+Using the included macros, you can define a global store and attach methods to it for a clean, centralized state management experience.
+
+```rust
+use rustand::{global_store, store_actions, Store};
+
+#[global_store]
+#[derive(Default, Clone)]
+struct Counter {
+    value: i32,
 }
-```
 
-### UI/WASM (Sync)
-```rust
-use rustand::Store;
+#[store_actions]
+impl Store<Counter> {
+    fn increment(&self) {
+        self.set(|s| s.value += 1);
+    }
+}
 
 fn main() {
-    let store = Store::new("Hello".to_string());
-
-    store.subscribe(|v| println!("State: {}", v)).unwrap();
-    store.set(|s| *s = "World".to_string()).unwrap();
+    let store = Counter::store();
+    
+    store.subscribe(|state| println!("Value: {}", state.value));
+    
+    store.increment();
 }
 ```
 
----
+## Safety & Re-entrancy
 
-## 🗺️ Ecosystem Roadmap
+To keep the API infallible and safe, `rustand` protects you from recursive updates.
 
-- [ ] `rustand-slint`
-- [ ] `rustand-tauri` (with npm counterpart)
-- [ ] `rustand-leptos`
-- [ ] `rustand-egui`
-- [ ] `rustand-redox`
+- **Recursive `set`**: If you try to call `store.set()` from inside a `subscribe` callback or another `set` closure, it will panic with a helpful message. This prevents infinite loops and deadlocks.
+- **Concurrent `get`**: You can call `store.get()` inside a subscriber, but calling it inside a `set` closure will panic (as the state is currently being mutated).
 
----
+## Target Use Case
 
-## 🤝 Contributing
+`rustand` is explicitly designed for **single-threaded** environments:
+- 🌐 **WASM / Frontend Rust**: Perfect for Yew, Leptos, or Dioxus.
+- 🎮 **Games**: Great for managing global game state in engines like Bevy (in single-threaded systems) or Macroquad.
+- 🛠️ **CLI Tools**: Simple way to share configuration or state across your app.
 
-Contributions and suggestions are welcomed! If you have ideas for new features or find any bugs, please open an [issue](https://github.com/nikarm22/rustand/issues).
+If you need a multi-threaded, `Send + Sync` store, this isn't the crate for you (yet!).
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
+## License
 
-## ⚖️ License
-
-Licensed under the [MIT License](LICENSE).
+MIT

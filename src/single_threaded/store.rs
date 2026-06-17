@@ -1,4 +1,3 @@
-use crate::error::StoreError;
 use crate::single_threaded::inner::InnerStore;
 use crate::single_threaded::subscription::{SubscriberId, Subscription};
 use std::rc::Rc as Arc;
@@ -24,169 +23,99 @@ where
                 state: std::cell::RefCell::new(initial),
                 subscribers: std::cell::RefCell::new(vec![]),
                 next_id: std::cell::Cell::new(0),
+                is_updating: std::cell::Cell::new(false),
             }),
         }
     }
 
     /// Get a clone of the current state.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`StoreError::Poisoned`] if the state is currently being updated.
-    pub fn get(&self) -> Result<T, StoreError>
+    pub fn get(&self) -> T
     where
         T: Clone,
     {
-        #[cfg(feature = "st-no-reentry")]
-        {
-            Ok(self.inner.state.borrow().clone())
-        }
-        #[cfg(not(feature = "st-no-reentry"))]
-        {
-            let state = self
-                .inner
-                .state
-                .try_borrow()
-                .map_err(|_| StoreError::Poisoned)?;
-            Ok(state.clone())
-        }
-    }
-
-    /// Asynchronous version of [`Store::get`].
-    ///
-    /// # Errors
-    ///
-    /// Returns [`StoreError::Poisoned`] if the state is currently being updated.
-    #[allow(clippy::future_not_send, clippy::unused_async)]
-    pub async fn get_async(&self) -> Result<T, StoreError>
-    where
-        T: Clone,
-    {
-        self.get()
+        self.inner.state.borrow().clone()
     }
 
     /// Update the state using a closure.
     ///
-    /// # Errors
+    /// # Panics
     ///
-    /// Returns [`StoreError::Poisoned`] if the state is currently being accessed.
-    pub fn set<F>(&self, update: F) -> Result<(), StoreError>
+    /// Panics if called recursively from within another `set` call or from a subscriber.
+    pub fn set<F>(&self, update: F)
     where
         F: FnOnce(&mut T),
-        T: Clone,
     {
-        #[cfg(feature = "st-no-reentry")]
-        {
-            {
-                let mut state = self.inner.state.borrow_mut();
-                update(&mut state);
+        if self.inner.is_updating.get() {
+            panic!("Recursive store.set() detected. You cannot update the store from within another update or a subscriber.");
+        }
+
+        self.inner.is_updating.set(true);
+
+        // Ensure is_updating is reset even if update or subscribers panic
+        struct UpdateGuard<'a> {
+            flag: &'a std::cell::Cell<bool>,
+        }
+        impl Drop for UpdateGuard<'_> {
+            fn drop(&mut self) {
+                self.flag.set(false);
             }
-            let state = self.inner.state.borrow();
+        }
+        let _guard = UpdateGuard {
+            flag: &self.inner.is_updating,
+        };
+
+        let subscribers_snapshot = {
+            let mut state = self.inner.state.borrow_mut();
+            update(&mut state);
+
             let subscribers = self.inner.subscribers.borrow();
-            for (_, cb) in subscribers.iter() {
+            subscribers
+                .iter()
+                .map(|(id, cb)| (*id, Arc::clone(cb)))
+                .collect::<Vec<_>>()
+        };
+
+        {
+            let state = self.inner.state.borrow();
+            for (_, cb) in subscribers_snapshot {
                 cb(&*state);
             }
-            Ok(())
         }
-        #[cfg(not(feature = "st-no-reentry"))]
-        {
-            let (state_snapshot, subscribers_snapshot) = {
-                let mut state = self
-                    .inner
-                    .state
-                    .try_borrow_mut()
-                    .map_err(|_| StoreError::Poisoned)?;
-                update(&mut state);
-                let state_snapshot = state.clone();
-
-                let subscribers = self
-                    .inner
-                    .subscribers
-                    .try_borrow()
-                    .map_err(|_| StoreError::Poisoned)?;
-
-                let subscribers_snapshot: Vec<_> = subscribers
-                    .iter()
-                    .map(|(id, cb)| (*id, Arc::clone(cb)))
-                    .collect();
-
-                (state_snapshot, subscribers_snapshot)
-            };
-
-            for (_, cb) in subscribers_snapshot {
-                cb(&state_snapshot);
-            }
-            Ok(())
-        }
-    }
-
-    /// Asynchronous version of [`Store::set`].
-    ///
-    /// # Errors
-    ///
-    /// Returns [`StoreError::Poisoned`] if the state is currently being accessed.
-    #[allow(clippy::future_not_send, clippy::unused_async)]
-    pub async fn set_async<F>(&self, update: F) -> Result<(), StoreError>
-    where
-        F: FnOnce(&mut T),
-        T: Clone,
-    {
-        self.set(update)
     }
 
     /// Subscribe to state changes.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`StoreError::Poisoned`] if the subscriber list is currently being accessed.
-    pub fn subscribe<F>(&self, callback: F) -> Result<Subscription<T>, StoreError>
+    pub fn subscribe<F>(&self, callback: F) -> Subscription<T>
     where
         F: Fn(&T) + 'static,
     {
         let id = self.inner.next_id.get();
         self.inner.next_id.set(id + 1);
 
-        #[cfg(feature = "st-no-reentry")]
-        {
-            self.inner
-                .subscribers
-                .borrow_mut()
-                .push((id, Arc::new(callback)));
-        }
-        #[cfg(not(feature = "st-no-reentry"))]
-        {
-            let mut subscribers = self
-                .inner
-                .subscribers
-                .try_borrow_mut()
-                .map_err(|_| StoreError::Poisoned)?;
-            subscribers.push((id, Arc::new(callback)));
-        }
-        Ok(Subscription {
+        let mut subscribers = self.inner.subscribers.borrow_mut();
+        subscribers.push((id, Arc::new(callback)));
+
+        Subscription {
             store: Arc::downgrade(&self.inner),
             id,
-        })
-    }
-
-    /// Asynchronous version of [`Store::subscribe`].
-    ///
-    /// # Errors
-    ///
-    /// Returns [`StoreError::Poisoned`] if the subscriber list is currently being accessed.
-    #[allow(clippy::future_not_send, clippy::unused_async)]
-    pub async fn subscribe_async<F>(&self, callback: F) -> Result<Subscription<T>, StoreError>
-    where
-        F: Fn(&T) + 'static,
-    {
-        self.subscribe(callback)
+        }
     }
 
     /// Unsubscribe a subscriber by ID.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`StoreError::Poisoned`] if the subscriber list is currently being accessed.
-    pub fn unsubscribe(&self, subscriber_id: SubscriberId) -> Result<(), StoreError> {
-        self.inner.unsubscribe(subscriber_id)
+    pub fn unsubscribe(&self, subscriber_id: SubscriberId) {
+        self.inner.unsubscribe(subscriber_id);
+    }
+}
+
+impl<T> PartialEq for Store<T> {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.inner, &other.inner)
+    }
+}
+
+impl<T> Eq for Store<T> {}
+
+impl<T> std::fmt::Debug for Store<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Store").finish_non_exhaustive()
     }
 }

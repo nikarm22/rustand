@@ -25,9 +25,6 @@ jobs:
       - name: Run fuzzing (smoke test)
         run: |
           cargo +nightly fuzz run single_threaded --features single-threaded -- -runs=1000
-          cargo +nightly fuzz run multi_threaded --features multi-threaded -- -runs=1000
-          cargo +nightly fuzz run tokio --features tokio -- -runs=1000
-          cargo +nightly fuzz run async_std --features async-std -- -runs=1000
 
   fmt:
     name: Rustfmt
@@ -41,12 +38,12 @@ jobs:
         run: cargo fmt --all -- --check
 
   clippy:
-    name: Clippy (${{ matrix.runtime }})
+    name: Clippy (${{ matrix.feature }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        runtime: [single-threaded, multi-threaded, tokio, async-std]
+        feature: [single-threaded, st-disable-reentry-protection]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -54,25 +51,25 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
         with:
-          key: clippy-${{ matrix.runtime }}
+          key: clippy-${{ matrix.feature }}
       - name: Run clippy
-        run: cargo clippy --features ${{ matrix.runtime }} --no-default-features --all-targets -- -D warnings
+        run: cargo clippy --features ${{ matrix.feature }} --no-default-features --all-targets -- -D warnings
 
   test:
-    name: Test (${{ matrix.runtime }})
+    name: Test (${{ matrix.feature }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        runtime: [single-threaded, multi-threaded, tokio, async-std]
+        feature: [single-threaded, st-disable-reentry-protection]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
-          key: test-${{ matrix.runtime }}
+          key: test-${{ matrix.feature }}
       - name: Run tests
-        run: cargo test --features ${{ matrix.runtime }} --no-default-features
+        run: cargo test --features ${{ matrix.feature }} --no-default-features
 
   publish:
     name: Publish

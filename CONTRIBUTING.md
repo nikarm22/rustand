@@ -26,8 +26,7 @@ If you are interested in leading or contributing to these, please open an [issue
 ## 📜 Development Guidelines
 
 - **Zero Unsafe:** The use of `unsafe` is strictly prohibited.
-- **Zero Dependencies:** The core crate must remain dependency-free (standard library only). Optional dependencies for runtimes (Tokio/async-std) are allowed only via feature flags.
-- **Atomic Parity:** Ensure changes to `multi-threaded` patterns are reflected (or intentionally omitted) in the `single-threaded` implementation.
+- **Zero Dependencies:** The crate must remain dependency-free (standard library only).
 
 ## 🚀 Getting Started
 

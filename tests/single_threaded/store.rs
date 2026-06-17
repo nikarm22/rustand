@@ -16,13 +16,12 @@ fn test_store_get_set() {
 fn test_deadlock_on_get_in_subscriber_single() {
     let store = Store::new(0);
 
-    let _sub = store
-        .subscribe({
-            let store = store.clone();
-            move |_v| {
-                let _ = store.get();
-            }
-        });
+    let _sub = store.subscribe({
+        let store = store.clone();
+        move |_v| {
+            let _ = store.get();
+        }
+    });
 
     store.set(|s| *s = 1);
 }
@@ -32,15 +31,14 @@ fn test_deadlock_on_get_in_subscriber_single() {
 fn test_deadlock_on_set_in_subscriber_single() {
     let store = Store::new(0);
 
-    let _sub = store
-        .subscribe({
-            let store = store.clone();
-            move |v| {
-                if *v == 1 {
-                    store.set(|s| *s = 2);
-                }
+    let _sub = store.subscribe({
+        let store = store.clone();
+        move |v| {
+            if *v == 1 {
+                store.set(|s| *s = 2);
             }
-        });
+        }
+    });
 
     store.set(|s| *s = 1);
 }

@@ -17,7 +17,7 @@ pub fn run_fuzz(ops: Vec<Operation>) {
     for op in ops {
         match op {
             Operation::Get => {
-                store.get();
+                let _ = store.get();
             }
             Operation::Set(val) => {
                 store.set(move |s| *s = val);

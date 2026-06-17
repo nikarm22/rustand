@@ -23,10 +23,9 @@ fn main() {
 
     println!("Initial count: {}", store.get_count());
 
-    let _sub = store
-        .subscribe(|state| {
-            println!("Subscriber notified. New count: {}", state.count);
-        });
+    let _sub = store.subscribe(|state| {
+        println!("Subscriber notified. New count: {}", state.count);
+    });
 
     {
         let store2 = State::store();
